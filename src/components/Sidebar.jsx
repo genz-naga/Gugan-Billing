@@ -67,7 +67,7 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside style={{
+    <aside className="no-print" style={{
       width: '240px',
       background: '#ffffff',
       borderRight: '1px solid var(--border-color)',

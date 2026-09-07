@@ -311,6 +311,7 @@ export const Billing = () => {
 
     const billData = {
       billTitle, // 'PERFORMA'
+      billFormat: 'performa',
       copyType,  // '(EXTRA COPY)'
       orderNo: orderNo.trim(),
       despatchDate: despatchDate.trim(),

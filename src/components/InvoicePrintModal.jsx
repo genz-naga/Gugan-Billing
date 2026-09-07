@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Printer,
@@ -12,8 +12,13 @@ import { formatDateTime } from '../utils/formatters';
 export const InvoicePrintModal = () => {
   const { shop, activeInvoiceForPrint, isPrintModalOpen, setIsPrintModalOpen } = useApp();
   // Default to performa format matching user's reference bill
-  const [printFormat, setPrintFormat] = useState(shop.printFormat || 'performa'); // 'performa', 'a4', 'thermal'
-  const monogramText = 'RK';
+  const [printFormat, setPrintFormat] = useState('performa'); // 'performa', 'a4', 'thermal'
+
+  useEffect(() => {
+    if (activeInvoiceForPrint) {
+      setPrintFormat(activeInvoiceForPrint.billFormat || 'performa');
+    }
+  }, [activeInvoiceForPrint]);
 
   if (!isPrintModalOpen || !activeInvoiceForPrint) return null;
 
@@ -223,52 +228,38 @@ export const InvoicePrintModal = () => {
                   </div>
                 </div>
 
-                {/* Right Side: Boxed Logo / Monogram Frame */}
+                {/* Right Side: Boxed Logo Frame */}
                 <div style={{
                   borderLeft: '1.5px solid #000000',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px',
+                  padding: '6px 8px',
                   background: '#ffffff',
-                  minHeight: '80px'
+                  minHeight: '85px',
+                  textAlign: 'center'
                 }}>
-                  {shop.logo && shop.logo !== '/logo.png' ? (
-                    <img src={shop.logo} alt="Logo" style={{ maxHeight: '72px', maxWidth: '120px', objectFit: 'contain' }} />
-                  ) : (
-                    /* High-Fidelity Stylized Monogram Vector matching image */
-                    <svg viewBox="0 0 100 80" width="100" height="70" style={{ overflow: 'visible' }}>
-                      <defs>
-                        <linearGradient id="monogramGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#1e293b" />
-                          <stop offset="100%" stopColor="#475569" />
-                        </linearGradient>
-                      </defs>
-                      {/* Stylized Monogram Letters "RK" / Shop Initials */}
-                      <text
-                        x="50%"
-                        y="62%"
-                        dominantBaseline="middle"
-                        textAnchor="middle"
-                        fill="url(#monogramGrad)"
-                        fontSize="48"
-                        fontWeight="900"
-                        fontFamily="Georgia, serif"
-                        letterSpacing="-2"
-                      >
-                        {monogramText}
-                      </text>
-                      {/* Swoosh Stroke across */}
-                      <path
-                        d="M 15 65 Q 50 35 88 15"
-                        stroke="#000000"
-                        strokeWidth="2.5"
-                        fill="none"
-                        strokeLinecap="round"
-                        opacity="0.8"
-                      />
-                    </svg>
-                  )}
+                  <img
+                    src={shop.logo || '/logo.png'}
+                    alt="Logo"
+                    style={{
+                      maxHeight: '76px',
+                      maxWidth: '125px',
+                      objectFit: 'contain',
+                      display: 'block'
+                    }}
+                  />
+                  <div style={{
+                    fontSize: '9px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.04em',
+                    marginTop: '2px',
+                    color: '#000000',
+                    lineHeight: 1.1
+                  }}>
+                    {shop.name || 'SHRI GUGAN CRACKERS'}
+                  </div>
                 </div>
               </div>
 
@@ -483,6 +474,11 @@ export const InvoicePrintModal = () => {
             >
               {/* Header */}
               <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
+                <img
+                  src={shop.logo || '/logo.png'}
+                  alt="Logo"
+                  style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', margin: '0 auto 6px', display: 'block' }}
+                />
                 <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#000000' }}>
                   {shop.name || 'SHRI GUGAN CRACKERS'}
                 </div>
@@ -646,7 +642,18 @@ export const InvoicePrintModal = () => {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '1.75rem' }}>🧨</span>
+                    <img
+                      src={shop.logo || '/logo.png'}
+                      alt="Logo"
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)',
+                        background: '#ffffff'
+                      }}
+                    />
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                       {shop.name}
                     </h2>

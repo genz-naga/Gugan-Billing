@@ -364,55 +364,101 @@ body {
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* Print Optimization */
+/* Print Optimization - Pure Invoice Isolation */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm 6mm;
+    margin: 6mm 6mm;
   }
+
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .no-print {
+
+  /* Completely suppress all background app elements */
+  .no-print,
+  .no-print *,
+  aside,
+  header,
+  nav,
+  .sidebar,
+  .main-content,
+  .navbar,
+  .content-body,
+  .modal-header,
+  .modal-footer {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
+
   .print-only {
     display: block !important;
   }
+
+  /* Make modal container fill paper cleanly */
+  .app-container {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
   .modal-backdrop {
     position: static !important;
     background: transparent !important;
     backdrop-filter: none !important;
     padding: 0 !important;
+    margin: 0 !important;
     display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
   }
+
   .modal-panel {
     box-shadow: none !important;
     border: none !important;
     max-width: 100% !important;
-    max-height: none !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
   }
-  .modal-header, .modal-footer {
-    display: none !important;
-  }
+
   .modal-body {
     background: transparent !important;
     padding: 0 !important;
+    margin: 0 !important;
     overflow: visible !important;
   }
+
+  #printable-invoice {
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
   .performa-invoice {
     max-width: 100% !important;
     width: 100% !important;
+    min-height: auto !important;
     box-shadow: none !important;
     border: 1.5px solid #000000 !important;
     page-break-inside: avoid !important;
@@ -424,4 +470,5 @@ body {
     display: none !important;
   }
 }
+
 

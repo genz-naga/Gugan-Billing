@@ -30,7 +30,7 @@ export const Navbar = () => {
   });
 
   return (
-    <header style={{
+    <header className="no-print" style={{
       background: '#ffffff',
       borderBottom: '1px solid var(--border-color)',
       padding: '0.75rem 1.5rem',

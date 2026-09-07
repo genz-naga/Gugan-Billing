@@ -54,10 +54,12 @@ const AppContent = () => {
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
-      <Sidebar />
+      <div className="no-print">
+        <Sidebar />
+      </div>
 
       {/* Main Content Area */}
-      <div className="main-content">
+      <div className="main-content no-print">
         <Navbar />
 
         <main className="content-body">
