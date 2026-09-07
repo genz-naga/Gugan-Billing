@@ -90,7 +90,7 @@ export const Navbar = () => {
           title="F2: Open Quick Billing"
         >
           <Sparkles size={15} />
-          <span>Quick Billing</span>
+          <span> Billing</span>
           <span className="kbd" style={{ background: 'rgba(255,255,255,0.25)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.4)' }}>F2</span>
         </button>
 
