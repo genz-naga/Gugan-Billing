@@ -29,7 +29,7 @@ export const INITIAL_SHOP = {
   nextInvoiceNum: 1,
   footerMessage: "Thank you for choosing Shri Gugan Crackers! Visit Again. / நன்றி! மீண்டும் வருக.",
   terms: "1. Goods once sold will not be exchanged or refunded.\n2. Store crackers in a cool, dry place.\n3. Always light crackers under adult supervision.",
-  printFormat: "thermal", // "thermal" or "a4"
+  printFormat: "performa", // "performa", "a4", "thermal"
   taxInclusive: true,
   defaultTaxRate: 12,
   upiId: ""

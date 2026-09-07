@@ -366,9 +366,19 @@ body {
 
 /* Print Optimization */
 @media print {
-  body {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 6mm;
+  }
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .no-print {
     display: none !important;
@@ -381,6 +391,7 @@ body {
     background: transparent !important;
     backdrop-filter: none !important;
     padding: 0 !important;
+    display: block !important;
   }
   .modal-panel {
     box-shadow: none !important;
@@ -388,9 +399,23 @@ body {
     max-width: 100% !important;
     max-height: none !important;
     width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .modal-header, .modal-footer {
     display: none !important;
+  }
+  .modal-body {
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .performa-invoice {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: 1.5px solid #000000 !important;
+    page-break-inside: avoid !important;
   }
 }
 
@@ -399,3 +424,4 @@ body {
     display: none !important;
   }
 }
+

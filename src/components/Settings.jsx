@@ -348,8 +348,9 @@ export const Settings = () => {
                 value={formData.printFormat}
                 onChange={handleChange}
               >
-                <option value="thermal">3-Inch (80mm) Thermal POS Printer (Fast Receipt)</option>
-                <option value="a4">Standard A4 Sheet (Detailed Full Invoice)</option>
+                <option value="performa">Performa Wholesale Invoice (As per Photo Format)</option>
+                <option value="a4">Standard A4 Sheet (Detailed Retail Invoice)</option>
+                <option value="thermal">3-Inch (80mm) Thermal POS Receipt</option>
               </select>
             </div>
 

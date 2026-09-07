@@ -181,6 +181,7 @@ export const AppProvider = ({ children }) => {
             ...updated[existingIdx],
             name: newSale.customerName || updated[existingIdx].name,
             address: newSale.customerAddress || updated[existingIdx].address,
+            gstin: newSale.customerGstin || updated[existingIdx].gstin || '',
             totalBilled: (updated[existingIdx].totalBilled || 0) + newSale.grandTotal,
             totalBills: (updated[existingIdx].totalBills || 0) + 1
           };
@@ -193,6 +194,7 @@ export const AppProvider = ({ children }) => {
               name: newSale.customerName || 'Walk-in Customer',
               mobile: newSale.customerMobile,
               address: newSale.customerAddress || '',
+              gstin: newSale.customerGstin || '',
               totalBilled: newSale.grandTotal,
               totalBills: 1,
               creditBalance: 0

@@ -13,6 +13,7 @@ export const Customers = () => {
     name: '',
     mobile: '',
     address: '',
+    gstin: '',
     creditBalance: 0
   });
 
@@ -21,6 +22,7 @@ export const Customers = () => {
       name: '',
       mobile: '',
       address: '',
+      gstin: '',
       creditBalance: 0
     });
     setIsModalOpen(true);
@@ -117,6 +119,11 @@ export const Customers = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)' }}>
                       <MapPin size={13} />
                       <span>{c.address}</span>
+                    </div>
+                  )}
+                  {c.gstin && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                      <strong>GSTIN/PAN:</strong> {c.gstin}
                     </div>
                   )}
                 </div>
@@ -245,12 +252,12 @@ export const Customers = () => {
             <form onSubmit={handleSubmit}>
               <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div>
-                  <label className="input-label">Customer Name *</label>
+                  <label className="input-label">Customer / Enterprise Name *</label>
                   <input
                     type="text"
                     required
                     className="input"
-                    placeholder="e.g. Kumar"
+                    placeholder="e.g. M/S.K.R.ENTERPRISE"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -270,13 +277,24 @@ export const Customers = () => {
                 </div>
 
                 <div>
-                  <label className="input-label">Address / Town (Optional)</label>
+                  <label className="input-label">Address / Town / City</label>
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. Gandhi Nagar, Rajapalayam"
+                    placeholder="e.g. BANGALORE"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="input-label">GSTIN / PAN (Optional)</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. 29ATGPM1120L2ZN"
+                    value={formData.gstin}
+                    onChange={(e) => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })}
                   />
                 </div>
 
