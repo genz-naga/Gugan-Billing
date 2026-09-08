@@ -50,13 +50,13 @@ export const Billing = () => {
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerGstin, setCustomerGstin] = useState('');
 
-  // Wholesale / Dispatch Details (as in Performa Bill)
-  const [billTitle, setBillTitle] = useState('PERFORMA');
-  const [copyType, setCopyType] = useState('(EXTRA COPY)');
+  // Bill Title & Dispatch Details
+  const [billTitle, setBillTitle] = useState('INVOICE');
+  const [copyType, setCopyType] = useState('');
   const [orderNo, setOrderNo] = useState('');
   const [despatchDate, setDespatchDate] = useState(getTodayFormatted());
-  const [transport, setTransport] = useState('ARIYA');
-  const [agent, setAgent] = useState('ARUN');
+  const [transport, setTransport] = useState('');
+  const [agent, setAgent] = useState('');
 
   // Cart Items
   const [items, setItems] = useState([]);
@@ -290,6 +290,10 @@ export const Billing = () => {
     setSplitCard('');
     setOrderNo('');
     setDespatchDate(getTodayFormatted());
+    setBillTitle('INVOICE');
+    setCopyType('');
+    setTransport('');
+    setAgent('');
     showToast('Billing screen cleared', 'info');
   };
 
@@ -313,13 +317,13 @@ export const Billing = () => {
     }
 
     const billData = {
-      billTitle, // 'TAX INVOICE' or 'PERFORMA'
+      billTitle: billTitle || 'INVOICE',
       billFormat: shop.printFormat || 'a4',
-      copyType,  // '(EXTRA COPY)'
+      copyType: '',
       orderNo: orderNo.trim(),
       despatchDate: despatchDate.trim(),
-      transport: transport.trim(),
-      agent: agent.trim(),
+      transport: '',
+      agent: '',
       customerName: customerName.trim() || 'Cash Customer',
       customerMobile: customerMobile.trim(),
       customerAddress: customerAddress.trim(),
@@ -355,13 +359,13 @@ export const Billing = () => {
     const previewData = {
       invoiceNo: `${shop.invoicePrefix || 'INV-'}${shop.nextInvoiceNum || 1001}`,
       date: new Date().toISOString(),
-      billTitle: billTitle || 'TAX INVOICE',
+      billTitle: billTitle || 'INVOICE',
       billFormat: shop.printFormat || 'a4',
-      copyType: copyType || '(PREVIEW COPY)',
+      copyType: '',
       orderNo: orderNo.trim(),
       despatchDate: despatchDate.trim(),
-      transport: transport.trim(),
-      agent: agent.trim(),
+      transport: '',
+      agent: '',
       customerName: customerName.trim() || 'Cash / Walk-in Customer',
       customerMobile: customerMobile.trim(),
       customerAddress: customerAddress.trim(),
@@ -564,13 +568,13 @@ export const Billing = () => {
           </div>
         </div>
 
-        {/* Dispatch & Transport Row (Order No, Despatch Date, Transport, Agent) */}
+        {/* Bill Metadata Row (Order No, Date, Bill Title) */}
         <div style={{
           marginTop: '1rem',
           paddingTop: '0.85rem',
           borderTop: '1px dashed var(--border-color)',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: '0.75rem',
           background: '#f8fafc',
           padding: '0.75rem 1rem',
@@ -579,13 +583,13 @@ export const Billing = () => {
           <div>
             <label className="input-label" style={{ fontSize: '0.72rem' }}>
               <Hash size={11} style={{ display: 'inline', marginRight: '3px' }} />
-              Order No
+              Order No (ஆர்டர் எண் - விருப்பத்தேர்வு)
             </label>
             <input
               type="text"
               className="input"
               style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem' }}
-              placeholder="e.g. ORD-101 or empty"
+              placeholder="e.g. ORD-101 (அல்லது காலியாக விடலாம்)"
               value={orderNo}
               onChange={(e) => setOrderNo(e.target.value)}
             />
@@ -594,7 +598,7 @@ export const Billing = () => {
           <div>
             <label className="input-label" style={{ fontSize: '0.72rem' }}>
               <Calendar size={11} style={{ display: 'inline', marginRight: '3px' }} />
-              Despatch Date
+              Bill Date (பில் தேதி)
             </label>
             <input
               type="text"
@@ -607,59 +611,17 @@ export const Billing = () => {
           </div>
 
           <div>
-            <label className="input-label" style={{ fontSize: '0.72rem' }}>
-              <Truck size={11} style={{ display: 'inline', marginRight: '3px' }} />
-              Transport
-            </label>
-            <input
-              type="text"
-              className="input"
-              style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem' }}
-              placeholder="e.g. ARIYA / VRL"
-              value={transport}
-              onChange={(e) => setTransport(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="input-label" style={{ fontSize: '0.72rem' }}>
-              <User size={11} style={{ display: 'inline', marginRight: '3px' }} />
-              Agent
-            </label>
-            <input
-              type="text"
-              className="input"
-              style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem' }}
-              placeholder="e.g. ARUN"
-              value={agent}
-              onChange={(e) => setAgent(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="input-label" style={{ fontSize: '0.72rem' }}>Bill Title</label>
+            <label className="input-label" style={{ fontSize: '0.72rem' }}>Bill Title (தலைப்பு)</label>
             <select
               className="select"
-              style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem' }}
+              style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem', fontWeight: 700 }}
               value={billTitle}
               onChange={(e) => setBillTitle(e.target.value)}
             >
-              <option value="PERFORMA">PERFORMA</option>
+              <option value="INVOICE">INVOICE</option>
               <option value="TAX INVOICE">TAX INVOICE</option>
               <option value="ESTIMATE">ESTIMATE</option>
             </select>
-          </div>
-
-          <div>
-            <label className="input-label" style={{ fontSize: '0.72rem' }}>Copy Note</label>
-            <input
-              type="text"
-              className="input"
-              style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem' }}
-              placeholder="(EXTRA COPY)"
-              value={copyType}
-              onChange={(e) => setCopyType(e.target.value)}
-            />
           </div>
         </div>
       </div>

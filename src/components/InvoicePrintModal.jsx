@@ -299,49 +299,35 @@ export const InvoicePrintModal = () => {
                   <div style={{
                     background: '#881337',
                     color: '#ffffff',
-                    padding: '4px 8px',
+                    padding: '5px 10px',
                     borderRadius: '4px',
                     textAlign: 'center',
                     fontWeight: '900',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase'
                   }}>
-                    {inv.billTitle || 'TAX INVOICE'}
+                    {(inv.billTitle && inv.billTitle !== 'PERFORMA') ? inv.billTitle : 'INVOICE'}
                   </div>
 
-                  <div style={{ fontSize: '10px', textAlign: 'center', color: '#64748b', fontWeight: 'bold' }}>
-                    {inv.copyType || '(ORIGINAL FOR RECIPIENT)'}
-                  </div>
-
-                  <table style={{ width: '100%', fontSize: '11.5px', marginTop: '4px' }}>
+                  <table style={{ width: '100%', fontSize: '11.5px', marginTop: '6px' }}>
                     <tbody>
                       <tr>
-                        <td style={{ color: '#64748b', fontWeight: 'bold', padding: '1px 0' }}>Bill No:</td>
+                        <td style={{ color: '#64748b', fontWeight: 'bold', padding: '2px 0' }}>Bill No:</td>
                         <td style={{ textAlign: 'right', fontWeight: '900', fontFamily: 'monospace', fontSize: '13px', color: '#0f172a' }}>
                           {inv.invoiceNo}
                         </td>
                       </tr>
                       <tr>
-                        <td style={{ color: '#64748b', padding: '1px 0' }}>Date:</td>
+                        <td style={{ color: '#64748b', padding: '2px 0' }}>Date:</td>
                         <td style={{ textAlign: 'right', fontWeight: '700' }}>
                           {inv.despatchDate || formatDateTime(inv.date)}
                         </td>
                       </tr>
                       {inv.orderNo && (
                         <tr>
-                          <td style={{ color: '#64748b', padding: '1px 0' }}>Order No:</td>
+                          <td style={{ color: '#64748b', padding: '2px 0' }}>Order No:</td>
                           <td style={{ textAlign: 'right', fontWeight: '600' }}>{inv.orderNo}</td>
-                        </tr>
-                      )}
-                      <tr>
-                        <td style={{ color: '#64748b', padding: '1px 0' }}>Transport:</td>
-                        <td style={{ textAlign: 'right', fontWeight: '600' }}>{inv.transport || 'Direct'}</td>
-                      </tr>
-                      {inv.agent && (
-                        <tr>
-                          <td style={{ color: '#64748b', padding: '1px 0' }}>Agent:</td>
-                          <td style={{ textAlign: 'right', fontWeight: '600' }}>{inv.agent}</td>
                         </tr>
                       )}
                     </tbody>
@@ -710,7 +696,7 @@ export const InvoicePrintModal = () => {
               {/* Document Header Title */}
               <div style={{
                 position: 'relative',
-                padding: '6px 16px 4px',
+                padding: '8px 16px',
                 textAlign: 'center',
                 borderBottom: '1.5px solid #000000',
                 background: '#f8fafc'
@@ -722,16 +708,7 @@ export const InvoicePrintModal = () => {
                   color: '#000000',
                   textTransform: 'uppercase'
                 }}>
-                  {inv.billTitle || 'PERFORMA'}
-                </div>
-                <div style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '8px',
-                  fontSize: '11px',
-                  color: '#1e293b'
-                }}>
-                  {inv.copyType || '(EXTRA COPY)'}
+                  {(inv.billTitle && inv.billTitle !== 'PERFORMA') ? inv.billTitle : 'INVOICE'}
                 </div>
               </div>
 
@@ -957,19 +934,15 @@ export const InvoicePrintModal = () => {
                   fontSize: '12px'
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {inv.orderNo && (
+                      <div>
+                        <strong>Order No &nbsp; &nbsp; &nbsp; &nbsp;:</strong> {inv.orderNo}
+                      </div>
+                    )}
                     <div>
-                      <strong>Order No &nbsp; &nbsp; &nbsp; &nbsp;:</strong> {inv.orderNo ? `${inv.orderNo},` : ' ,'}
+                      <strong>Date &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;:</strong> {inv.despatchDate || formatDateTime(inv.date)}
                     </div>
-                    <div>
-                      <strong>Despatch date &nbsp;:</strong> {inv.despatchDate || '28-08-2026'}
-                    </div>
-                    <div>
-                      <strong>Transport &nbsp; &nbsp; &nbsp; :</strong> {inv.transport || 'ARIYA'}
-                    </div>
-                    <div>
-                      <strong>Agent &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :</strong> {inv.agent || 'ARUN'}
-                    </div>
-                    <div style={{ marginTop: '4px', fontSize: '11px', color: '#1e293b' }}>
+                    <div style={{ marginTop: '6px', fontSize: '11px', color: '#1e293b' }}>
                       <strong>Words:</strong> {numberToWordsIndian(netAmount)}
                     </div>
                   </div>
@@ -1090,7 +1063,6 @@ export const InvoicePrintModal = () => {
                 {inv.customerAddress && <div><strong>City:</strong> {inv.customerAddress}</div>}
                 {inv.customerMobile && <div><strong>Phone:</strong> +91 {inv.customerMobile}</div>}
                 {inv.customerGstin && <div><strong>GSTIN:</strong> {inv.customerGstin}</div>}
-                {inv.transport && <div><strong>Transport:</strong> {inv.transport}</div>}
               </div>
 
               <div style={{ borderBottom: '1px dashed #000000', margin: '6px 0' }}></div>
