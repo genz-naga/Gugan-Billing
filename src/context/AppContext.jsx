@@ -41,7 +41,12 @@ export const AppProvider = ({ children }) => {
       const name = (!parsed.name || parsed.name === 'Sri Vinayaga Crackers') ? 'Shri Gugan Crackers' : parsed.name;
       const tamilName = (!parsed.tamilName || parsed.tamilName === 'ஸ்ரீ விநாயகர் கிராக்கர்ஸ்') ? 'ஸ்ரீ குகன் கிராக்கர்ஸ்' : parsed.tamilName;
       const city = (!parsed.city || parsed.city === 'Rajapalayam') ? 'Sivakasi' : parsed.city;
-      return { ...INITIAL_SHOP, ...parsed, name, tamilName, city, logo: parsed.logo || '/logo.png' };
+      const address = (!parsed.address || parsed.address === 'Main Bazaar') ? INITIAL_SHOP.address : parsed.address;
+      const mobile = !parsed.mobile ? INITIAL_SHOP.mobile : parsed.mobile;
+      const email = !parsed.email ? INITIAL_SHOP.email : parsed.email;
+      const gstin = !parsed.gstin ? INITIAL_SHOP.gstin : parsed.gstin;
+      const upiId = !parsed.upiId ? INITIAL_SHOP.upiId : parsed.upiId;
+      return { ...INITIAL_SHOP, ...parsed, name, tamilName, city, address, mobile, email, gstin, upiId, logo: parsed.logo || '/logo.png' };
     }
     return INITIAL_SHOP;
   });

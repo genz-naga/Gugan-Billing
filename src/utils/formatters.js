@@ -43,3 +43,56 @@ export const formatPhone = (phone) => {
   }
   return phone;
 };
+
+export const numberToWordsIndian = (amount) => {
+  const num = Math.floor(Math.abs(Number(amount) || 0));
+  if (num === 0) return 'Zero Rupees Only';
+
+  const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const convertLessThanOneThousand = (n) => {
+    let result = '';
+    if (n >= 100) {
+      result += units[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n >= 20) {
+      result += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    }
+    if (n > 0) {
+      result += units[n] + ' ';
+    }
+    return result.trim();
+  };
+
+  let remainder = num;
+  let words = '';
+
+  const crores = Math.floor(remainder / 10000000);
+  if (crores > 0) {
+    words += convertLessThanOneThousand(crores) + ' Crore ';
+    remainder %= 10000000;
+  }
+
+  const lakhs = Math.floor(remainder / 100000);
+  if (lakhs > 0) {
+    words += convertLessThanOneThousand(lakhs) + ' Lakh ';
+    remainder %= 100000;
+  }
+
+  const thousands = Math.floor(remainder / 1000);
+  if (thousands > 0) {
+    words += convertLessThanOneThousand(thousands) + ' Thousand ';
+    remainder %= 1000;
+  }
+
+  if (remainder > 0) {
+    words += convertLessThanOneThousand(remainder);
+  }
+
+  return `Rupees ${words.trim()} Only`;
+};
+

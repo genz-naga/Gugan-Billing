@@ -22,18 +22,21 @@ export const INITIAL_SHOP = {
   district: "Virudhunagar",
   state: "Tamil Nadu",
   pincode: "626123",
-  mobile: "",
-  altMobile: "",
-  email: "",
+  mobile: "94431 23456",
+  altMobile: "98421 23456",
+  email: "guganfireworks@gmail.com",
+  gstin: "33AAAAA0000A1Z5",
+  stateCode: "33",
   invoicePrefix: "INV-",
   nextInvoiceNum: 1,
   footerMessage: "Thank you for choosing Shri Gugan Crackers! Visit Again. / நன்றி! மீண்டும் வருக.",
-  terms: "1. Goods once sold will not be exchanged or refunded.\n2. Store crackers in a cool, dry place.\n3. Always light crackers under adult supervision.",
-  printFormat: "performa", // "performa", "a4", "thermal"
+  terms: "1. Goods once sold will not be exchanged or refunded.\n2. Store crackers in a cool, dry place.\n3. Always light crackers under adult supervision.\n4. Subject to Sivakasi Jurisdiction.",
+  printFormat: "a4", // "a4", "performa", "thermal"
   taxInclusive: true,
   defaultTaxRate: 12,
-  upiId: ""
+  upiId: "gugancrackers@upi"
 };
+
 
 // Pure clean slate - Zero dummy data as requested by user
 export const INITIAL_PRODUCTS = [];

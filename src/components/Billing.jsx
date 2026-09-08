@@ -18,7 +18,8 @@ import {
   Truck,
   Calendar,
   Hash,
-  MapPin
+  MapPin,
+  Eye
 } from 'lucide-react';
 import { formatDateTime } from '../utils/formatters';
 
@@ -29,7 +30,9 @@ export const Billing = () => {
     customers,
     categories,
     saveBill,
-    showToast
+    showToast,
+    setActiveInvoiceForPrint,
+    setIsPrintModalOpen
   } = useApp();
 
   const getTodayFormatted = () => {
@@ -310,8 +313,8 @@ export const Billing = () => {
     }
 
     const billData = {
-      billTitle, // 'PERFORMA'
-      billFormat: 'performa',
+      billTitle, // 'TAX INVOICE' or 'PERFORMA'
+      billFormat: shop.printFormat || 'a4',
       copyType,  // '(EXTRA COPY)'
       orderNo: orderNo.trim(),
       despatchDate: despatchDate.trim(),
@@ -341,6 +344,46 @@ export const Billing = () => {
 
     saveBill(billData, print);
     handleResetBill();
+  };
+
+  // Preview current bill without saving
+  const handlePreviewBill = () => {
+    if (items.length === 0) {
+      showToast('Add at least one item to preview the bill template!', 'warning');
+      return;
+    }
+    const previewData = {
+      invoiceNo: `${shop.invoicePrefix || 'INV-'}${shop.nextInvoiceNum || 1001}`,
+      date: new Date().toISOString(),
+      billTitle: billTitle || 'TAX INVOICE',
+      billFormat: shop.printFormat || 'a4',
+      copyType: copyType || '(PREVIEW COPY)',
+      orderNo: orderNo.trim(),
+      despatchDate: despatchDate.trim(),
+      transport: transport.trim(),
+      agent: agent.trim(),
+      customerName: customerName.trim() || 'Cash / Walk-in Customer',
+      customerMobile: customerMobile.trim(),
+      customerAddress: customerAddress.trim(),
+      customerGstin: customerGstin.trim().toUpperCase(),
+      items,
+      totalCases,
+      totalQty,
+      subtotal,
+      pfPercent: Number(pfPercent) || 0,
+      pfAmount,
+      taxPercent: Number(taxPercent) || 0,
+      taxTotal: taxAmount,
+      roundOff,
+      grandTotal: netAmount,
+      netAmount,
+      commissionPercent: Number(commissionPercent) || 0,
+      commissionAmount,
+      netBalance,
+      paymentMethod
+    };
+    setActiveInvoiceForPrint(previewData);
+    setIsPrintModalOpen(true);
   };
 
   // Keyboard Shortcuts (F2, F3, F4, F5, F6, Esc)
@@ -1225,14 +1268,25 @@ export const Billing = () => {
                 </button>
 
                 <button
-                  onClick={handleResetBill}
+                  onClick={handlePreviewBill}
                   className="btn btn-secondary"
-                  style={{ fontWeight: 600 }}
+                  style={{ fontWeight: 700, gap: '0.35rem' }}
+                  disabled={items.length === 0}
+                  title="View Bill Template Preview"
                 >
-                  <RotateCcw size={16} />
-                  <span>Clear (ESC)</span>
+                  <Eye size={16} />
+                  <span>Preview Bill (முன்னோட்டம்)</span>
                 </button>
               </div>
+
+              <button
+                onClick={handleResetBill}
+                className="btn btn-outline"
+                style={{ fontWeight: 600, color: 'var(--danger)', borderColor: '#fca5a5' }}
+              >
+                <RotateCcw size={15} />
+                <span>Clear Bill Screen (ESC)</span>
+              </button>
             </div>
           </div>
         </div>

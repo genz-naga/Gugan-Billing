@@ -5,18 +5,24 @@ import {
   X,
   FileSpreadsheet,
   Receipt,
-  Sparkles
+  Sparkles,
+  Phone,
+  Mail,
+  MapPin,
+  QrCode,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
-import { formatDateTime } from '../utils/formatters';
+import { formatDateTime, numberToWordsIndian, formatCurrency } from '../utils/formatters';
 
 export const InvoicePrintModal = () => {
   const { shop, activeInvoiceForPrint, isPrintModalOpen, setIsPrintModalOpen } = useApp();
-  // Default to performa format matching user's reference bill
-  const [printFormat, setPrintFormat] = useState('performa'); // 'performa', 'a4', 'thermal'
+  // Default to A4 Executive or the bill's saved format
+  const [printFormat, setPrintFormat] = useState('a4'); // 'a4', 'performa', 'thermal'
 
   useEffect(() => {
     if (activeInvoiceForPrint) {
-      setPrintFormat(activeInvoiceForPrint.billFormat || 'performa');
+      setPrintFormat(activeInvoiceForPrint.billFormat || 'a4');
     }
   }, [activeInvoiceForPrint]);
 
@@ -33,6 +39,10 @@ export const InvoicePrintModal = () => {
   const totalCases = inv.totalCases !== undefined
     ? Number(inv.totalCases)
     : (inv.items ? inv.items.reduce((sum, i) => sum + (Number(i.cases) || 0), 0) : 0);
+
+  const totalQty = inv.totalQty !== undefined
+    ? Number(inv.totalQty)
+    : (inv.items ? inv.items.reduce((sum, i) => sum + (Number(i.qty) || 0), 0) : 0);
 
   const pfPercent = inv.pfPercent !== undefined ? Number(inv.pfPercent) : 3;
   const pfAmount = inv.pfAmount !== undefined
@@ -63,13 +73,32 @@ export const InvoicePrintModal = () => {
     ? Number(inv.netBalance)
     : (netAmount - commissionAmount);
 
-  // Minimum row count for authentic vertical lines stretching to footer
-  const emptyRowsCount = Math.max(0, 11 - (inv.items ? inv.items.length : 0));
-  const emptyRows = Array.from({ length: emptyRowsCount });
+  // Pad items for authentic paper billing look
+  const emptyRowsCountPerforma = Math.max(0, 10 - (inv.items ? inv.items.length : 0));
+  const emptyRowsPerforma = Array.from({ length: emptyRowsCountPerforma });
+
+  const emptyRowsCountA4 = Math.max(0, 6 - (inv.items ? inv.items.length : 0));
+  const emptyRowsA4 = Array.from({ length: emptyRowsCountA4 });
+
+  // UPI payment payload for QR Code
+  const upiId = shop.upiId || 'gugancrackers@upi';
+  const upiPayLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(shop.name || 'Shri Gugan Crackers')}&am=${netAmount}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv.invoiceNo}`)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=1&data=${encodeURIComponent(upiPayLink)}`;
+
+  // Shop details with safe fallbacks
+  const shopAddress = shop.address || 'Sattur Road, Near Bus Stand';
+  const shopCity = shop.city || 'Sivakasi';
+  const shopDistrict = shop.district || 'Virudhunagar';
+  const shopState = shop.state || 'Tamil Nadu';
+  const shopPincode = shop.pincode || '626123';
+  const shopPhone = shop.mobile || '94431 23456';
+  const shopAltPhone = shop.altMobile || '98421 23456';
+  const shopEmail = shop.email || 'guganfireworks@gmail.com';
+  const shopGstin = shop.gstin || '33AAAAA0000A1Z5';
 
   return (
     <div className="modal-backdrop">
-      <div className="modal-panel" style={{ maxWidth: printFormat === 'thermal' ? '460px' : '880px', width: '100%' }}>
+      <div className="modal-panel" style={{ maxWidth: printFormat === 'thermal' ? '460px' : '920px', width: '100%' }}>
         {/* Modal Controls (Hidden in Print) */}
         <div className="modal-header no-print">
           <div className="modal-title">
@@ -81,11 +110,28 @@ export const InvoicePrintModal = () => {
             {/* Format Toggle Buttons */}
             <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: 'var(--radius-md)' }}>
               <button
+                onClick={() => setPrintFormat('a4')}
+                className="btn btn-sm"
+                style={{
+                  background: printFormat === 'a4' ? '#ffffff' : 'transparent',
+                  color: printFormat === 'a4' ? 'var(--primary)' : 'var(--text-muted)',
+                  border: 'none',
+                  boxShadow: printFormat === 'a4' ? 'var(--shadow-xs)' : 'none',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  gap: '0.35rem'
+                }}
+              >
+                <Sparkles size={14} />
+                <span>Executive A4 (முழு பில்)</span>
+              </button>
+
+              <button
                 onClick={() => setPrintFormat('performa')}
                 className="btn btn-sm"
                 style={{
                   background: printFormat === 'performa' ? '#ffffff' : 'transparent',
-                  color: printFormat === 'performa' ? 'var(--primary)' : 'var(--text-muted)',
+                  color: printFormat === 'performa' ? 'var(--accent-blue)' : 'var(--text-muted)',
                   border: 'none',
                   boxShadow: printFormat === 'performa' ? 'var(--shadow-xs)' : 'none',
                   fontWeight: 700,
@@ -93,24 +139,8 @@ export const InvoicePrintModal = () => {
                   gap: '0.35rem'
                 }}
               >
-                <Sparkles size={14} />
-                <span>Performa Wholesale</span>
-              </button>
-
-              <button
-                onClick={() => setPrintFormat('a4')}
-                className="btn btn-sm"
-                style={{
-                  background: printFormat === 'a4' ? '#ffffff' : 'transparent',
-                  color: printFormat === 'a4' ? 'var(--accent-blue)' : 'var(--text-muted)',
-                  border: 'none',
-                  boxShadow: printFormat === 'a4' ? 'var(--shadow-xs)' : 'none',
-                  fontWeight: 700,
-                  fontSize: '0.75rem'
-                }}
-              >
                 <FileSpreadsheet size={14} />
-                <span>A4 Standard</span>
+                <span>Wholesale Performa (மொத்த விற்பனை)</span>
               </button>
 
               <button
@@ -122,11 +152,12 @@ export const InvoicePrintModal = () => {
                   border: 'none',
                   boxShadow: printFormat === 'thermal' ? 'var(--shadow-xs)' : 'none',
                   fontWeight: 700,
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  gap: '0.35rem'
                 }}
               >
                 <Receipt size={14} />
-                <span>Thermal 80mm</span>
+                <span>Thermal 80mm (ரசீது)</span>
               </button>
             </div>
 
@@ -142,9 +173,520 @@ export const InvoicePrintModal = () => {
 
         {/* Printable Area */}
         <div className="modal-body" style={{ background: '#cbd5e1', padding: '1.25rem', overflowY: 'auto' }}>
-          {printFormat === 'performa' ? (
+          {printFormat === 'a4' ? (
             /* ==========================================================
-               PERFORMA / WHOLESALE BILL (EXACT MATCH TO REFERENCE PHOTO)
+               1. EXECUTIVE A4 MASTER BILL TEMPLATE (COMPLETE & LUXURIOUS)
+               ========================================================== */
+            <div
+              id="printable-invoice"
+              style={{
+                width: '100%',
+                maxWidth: '820px',
+                margin: '0 auto',
+                background: '#ffffff',
+                border: '2px solid #1e293b',
+                boxSizing: 'border-box',
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                color: '#0f172a',
+                padding: '1.25rem 1.5rem',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem'
+              }}
+            >
+              {/* TOP HEADER: Shop Logo, Shop Name, Complete Address, Invoice Meta */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '110px 1fr 220px',
+                alignItems: 'center',
+                gap: '1rem',
+                borderBottom: '2px solid #881337',
+                paddingBottom: '0.85rem'
+              }}>
+                {/* 1. Shop Logo */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#ffffff',
+                  padding: '4px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <img
+                    src={shop.logo || '/logo.png'}
+                    alt="Shri Gugan Crackers Logo"
+                    style={{
+                      maxHeight: '92px',
+                      maxWidth: '100px',
+                      objectFit: 'contain',
+                      display: 'block'
+                    }}
+                  />
+                </div>
+
+                {/* 2. Shop Details & Address */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{
+                    fontSize: '22px',
+                    fontWeight: '900',
+                    color: '#881337',
+                    letterSpacing: '0.04em',
+                    lineHeight: '1.1',
+                    textTransform: 'uppercase'
+                  }}>
+                    {shop.name || 'SHRI GUGAN CRACKERS'}
+                  </div>
+                  <div style={{
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    color: '#b45309',
+                    letterSpacing: '0.02em',
+                    marginTop: '1px'
+                  }}>
+                    {shop.tamilName || 'ஸ்ரீ குகன் கிராக்கர்ஸ்'}
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: '#475569',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {shop.tagline || 'Direct Sivakasi Fireworks • Retail & Wholesale'}
+                  </div>
+
+                  {/* Complete Shop Address */}
+                  <div style={{
+                    fontSize: '11.5px',
+                    color: '#1e293b',
+                    marginTop: '3px',
+                    lineHeight: '1.35'
+                  }}>
+                    <strong>Address:</strong> {shopAddress}, {shopCity} - {shopPincode}, {shopDistrict} Dist, {shopState}
+                  </div>
+
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#1e293b',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.85rem'
+                  }}>
+                    <span><strong>Phone:</strong> +91 {shopPhone} {shopAltPhone ? ` / ${shopAltPhone}` : ''}</span>
+                    <span><strong>Email:</strong> {shopEmail}</span>
+                  </div>
+
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    color: '#0f172a'
+                  }}>
+                    <span>GSTIN: <span style={{ fontFamily: 'monospace', letterSpacing: '0.04em' }}>{shopGstin}</span></span>
+                    <span style={{ marginLeft: '12px', color: '#64748b' }}>State Code: 33 (TN)</span>
+                  </div>
+                </div>
+
+                {/* 3. Invoice Badge & Key Numbers */}
+                <div style={{
+                  borderLeft: '1.5px dashed #cbd5e1',
+                  paddingLeft: '0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  <div style={{
+                    background: '#881337',
+                    color: '#ffffff',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    textAlign: 'center',
+                    fontWeight: '900',
+                    fontSize: '12px',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase'
+                  }}>
+                    {inv.billTitle || 'TAX INVOICE'}
+                  </div>
+
+                  <div style={{ fontSize: '10px', textAlign: 'center', color: '#64748b', fontWeight: 'bold' }}>
+                    {inv.copyType || '(ORIGINAL FOR RECIPIENT)'}
+                  </div>
+
+                  <table style={{ width: '100%', fontSize: '11.5px', marginTop: '4px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ color: '#64748b', fontWeight: 'bold', padding: '1px 0' }}>Bill No:</td>
+                        <td style={{ textAlign: 'right', fontWeight: '900', fontFamily: 'monospace', fontSize: '13px', color: '#0f172a' }}>
+                          {inv.invoiceNo}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style={{ color: '#64748b', padding: '1px 0' }}>Date:</td>
+                        <td style={{ textAlign: 'right', fontWeight: '700' }}>
+                          {inv.despatchDate || formatDateTime(inv.date)}
+                        </td>
+                      </tr>
+                      {inv.orderNo && (
+                        <tr>
+                          <td style={{ color: '#64748b', padding: '1px 0' }}>Order No:</td>
+                          <td style={{ textAlign: 'right', fontWeight: '600' }}>{inv.orderNo}</td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td style={{ color: '#64748b', padding: '1px 0' }}>Transport:</td>
+                        <td style={{ textAlign: 'right', fontWeight: '600' }}>{inv.transport || 'Direct'}</td>
+                      </tr>
+                      {inv.agent && (
+                        <tr>
+                          <td style={{ color: '#64748b', padding: '1px 0' }}>Agent:</td>
+                          <td style={{ textAlign: 'right', fontWeight: '600' }}>{inv.agent}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* CUSTOMER DETAILS (BILLED TO) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '6px',
+                padding: '8px 12px',
+                fontSize: '12px'
+              }}>
+                <div>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#64748b', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+                    Billed To / வாடிக்கையாளர் விவரம்:
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', marginTop: '2px' }}>
+                    M/s {inv.customerName || 'Cash / Walk-in Customer'}
+                  </div>
+                  <div style={{ color: '#334155', marginTop: '2px', fontWeight: '500' }}>
+                    <strong>Address:</strong> {inv.customerAddress || 'Direct / Sivakasi'}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  {inv.customerMobile && (
+                    <div style={{ fontSize: '12px' }}>
+                      <span style={{ color: '#64748b' }}>Customer Mobile: </span>
+                      <strong style={{ color: '#881337', fontSize: '13px' }}>+91 {inv.customerMobile}</strong>
+                    </div>
+                  )}
+                  {inv.customerGstin ? (
+                    <div style={{ fontSize: '12px', marginTop: '2px' }}>
+                      <span style={{ color: '#64748b' }}>GSTIN / PAN: </span>
+                      <strong style={{ fontFamily: 'monospace', letterSpacing: '0.04em' }}>{inv.customerGstin}</strong>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                      Place of Supply: <strong>Tamil Nadu (33)</strong>
+                    </div>
+                  )}
+                  <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
+                    Payment Mode: <span style={{ fontWeight: 'bold', color: '#16a34a' }}>{inv.paymentMethod || 'Cash'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PRODUCTS TABLE */}
+              <div style={{ overflow: 'hidden', border: '1.5px solid #000000', borderRadius: '4px' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '11.5px',
+                  color: '#000000'
+                }}>
+                  <thead>
+                    <tr style={{
+                      background: '#1e293b',
+                      color: '#ffffff',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '11.5px'
+                    }}>
+                      <th style={{ width: '5%', padding: '6px 4px', borderRight: '1px solid #ffffff' }}>S.N</th>
+                      <th style={{ width: '35%', padding: '6px 8px', textAlign: 'left', borderRight: '1px solid #ffffff' }}>
+                        Cracker Product Description (பட்டாசு பெயர்)
+                      </th>
+                      <th style={{ width: '8%', padding: '6px 4px', borderRight: '1px solid #ffffff' }}>Cases</th>
+                      <th style={{ width: '12%', padding: '6px 4px', borderRight: '1px solid #ffffff' }}>Pack Content</th>
+                      <th style={{ width: '8%', padding: '6px 4px', borderRight: '1px solid #ffffff' }}>Qty</th>
+                      <th style={{ width: '11%', padding: '6px 4px', borderRight: '1px solid #ffffff' }}>Rate (₹)</th>
+                      <th style={{ width: '7%', padding: '6px 4px', borderRight: '1px solid #ffffff' }}>Disc.%</th>
+                      <th style={{ width: '14%', padding: '6px 8px', textAlign: 'right' }}>Total (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inv.items && inv.items.map((item, idx) => (
+                      <tr key={idx} style={{
+                        borderBottom: '1px solid #cbd5e1',
+                        background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                        height: '27px'
+                      }}>
+                        <td style={{ textAlign: 'center', padding: '4px', borderRight: '1px solid #cbd5e1' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ textAlign: 'left', padding: '4px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold' }}>
+                          {item.name}
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '4px', borderRight: '1px solid #cbd5e1' }}>
+                          {item.cases || 1}
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '4px', borderRight: '1px solid #cbd5e1' }}>
+                          {item.packContent || item.packing || '1 BOX'}
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '4px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold' }}>
+                          {item.qty}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '4px 8px', borderRight: '1px solid #cbd5e1' }}>
+                          {Number(item.rate).toFixed(2)}
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '4px', borderRight: '1px solid #cbd5e1', color: '#047857' }}>
+                          {item.discount ? `${Number(item.discount).toFixed(1)}%` : '-'}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '4px 8px', fontWeight: 'bold' }}>
+                          {Number(item.total).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Empty placeholder rows for balance */}
+                    {emptyRowsA4.map((_, i) => (
+                      <tr key={`empty-a4-${i}`} style={{ height: '24px', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td style={{ borderRight: '1px solid #e2e8f0' }}>&nbsp;</td>
+                        <td>&nbsp;</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* TABLE SUMMARY BAR */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '40% 12% 16% 32%',
+                background: '#f1f5f9',
+                border: '1.5px solid #000000',
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                <div>Total Items Billed: {inv.items ? inv.items.length : 0}</div>
+                <div style={{ textAlign: 'center' }}>Cases: {totalCases}</div>
+                <div style={{ textAlign: 'center' }}>Total Qty: {totalQty}</div>
+                <div style={{ textAlign: 'right' }}>SubTotal: ₹{subtotal.toFixed(2)}</div>
+              </div>
+
+              {/* LOWER SPLIT: UPI & Words & Terms on Left / Financials on Right */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 310px',
+                gap: '1rem',
+                alignItems: 'start'
+              }}>
+                {/* Left Column: Amount in Words, UPI QR Code, Terms */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {/* Amount in Words */}
+                  <div style={{
+                    background: '#fef3c7',
+                    border: '1px solid #f59e0b',
+                    borderRadius: '4px',
+                    padding: '6px 10px',
+                    fontSize: '11.5px'
+                  }}>
+                    <strong style={{ color: '#92400e' }}>Amount in Words (வார்த்தைகளில்):</strong>
+                    <div style={{ fontWeight: 'bold', color: '#1e293b', marginTop: '2px', fontStyle: 'italic' }}>
+                      {numberToWordsIndian(netAmount)}
+                    </div>
+                  </div>
+
+                  {/* UPI QR Code Box & Payment Mode */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.85rem',
+                    padding: '8px 10px',
+                    background: '#ffffff',
+                    border: '1.5px dashed #059669',
+                    borderRadius: '6px'
+                  }}>
+                    <img
+                      src={qrCodeUrl}
+                      alt="UPI QR Code"
+                      style={{
+                        width: '78px',
+                        height: '78px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        display: 'block'
+                      }}
+                    />
+                    <div style={{ flex: 1, fontSize: '11px', color: '#1e293b' }}>
+                      <div style={{ fontWeight: '900', color: '#059669', fontSize: '11.5px', textTransform: 'uppercase' }}>
+                        📲 Instant UPI Scan &amp; Pay
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '1px' }}>
+                        GPay • PhonePe • Paytm • BHIM
+                      </div>
+                      <div style={{ marginTop: '3px', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '11px' }}>
+                        UPI ID: {upiId}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#16a34a', marginTop: '2px' }}>
+                        Amount: <strong>₹{netAmount.toFixed(2)}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms & Conditions */}
+                  <div style={{
+                    fontSize: '9.5px',
+                    color: '#475569',
+                    lineHeight: '1.35',
+                    borderTop: '1px solid #e2e8f0',
+                    paddingTop: '4px'
+                  }}>
+                    <div style={{ fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase' }}>
+                      Terms &amp; Safety Conditions (விதிமுறைகள்):
+                    </div>
+                    <div>1. Goods once sold will not be exchanged or refunded.</div>
+                    <div>2. Store fireworks in a cool, dry and fireproof location.</div>
+                    <div>3. Light crackers strictly under responsible adult supervision.</div>
+                    <div>4. Subject to Sivakasi Jurisdiction only.</div>
+                  </div>
+                </div>
+
+                {/* Right Column: Financial Calculations & Grand Total */}
+                <div style={{
+                  border: '1.5px solid #000000',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                  background: '#ffffff'
+                }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '4px 10px', color: '#475569' }}>Gross SubTotal:</td>
+                        <td style={{ textAlign: 'right', padding: '4px 10px', fontWeight: '600' }}>
+                          ₹{subtotal.toFixed(2)}
+                        </td>
+                      </tr>
+
+                      {pfAmount > 0 && (
+                        <tr>
+                          <td style={{ padding: '4px 10px', color: '#475569' }}>P &amp; F Charges ({pfPercent}%):</td>
+                          <td style={{ textAlign: 'right', padding: '4px 10px', fontWeight: '600' }}>
+                            ₹{pfAmount.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {taxAmount > 0 && (
+                        <tr>
+                          <td style={{ padding: '4px 10px', color: '#475569' }}>Tax / GST ({taxPercent}%):</td>
+                          <td style={{ textAlign: 'right', padding: '4px 10px', fontWeight: '600' }}>
+                            ₹{taxAmount.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {roundOff !== 0 && (
+                        <tr>
+                          <td style={{ padding: '4px 10px', color: '#64748b' }}>Round Off:</td>
+                          <td style={{ textAlign: 'right', padding: '4px 10px', color: '#64748b' }}>
+                            {roundOff > 0 ? `+₹${roundOff.toFixed(2)}` : `₹${roundOff.toFixed(2)}`}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* NET AMOUNT (GRAND TOTAL) */}
+                      <tr style={{ background: '#881337', color: '#ffffff' }}>
+                        <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase' }}>
+                          NET AMOUNT (மொத்தம்):
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '8px 10px', fontSize: '16px', fontWeight: '900' }}>
+                          ₹{netAmount.toFixed(2)}
+                        </td>
+                      </tr>
+
+                      {commissionAmount > 0 && (
+                        <tr>
+                          <td style={{ padding: '4px 10px', color: '#dc2626' }}>Commission @ {commissionPercent}%:</td>
+                          <td style={{ textAlign: 'right', padding: '4px 10px', color: '#dc2626', fontWeight: 'bold' }}>
+                            -₹{commissionAmount.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {commissionAmount > 0 && (
+                        <tr style={{ borderTop: '1.5px solid #000000', background: '#ecfdf5' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: '900', color: '#065f46', fontSize: '12.5px' }}>
+                            NET BALANCE PAYABLE:
+                          </td>
+                          <td style={{ textAlign: 'right', padding: '6px 10px', fontWeight: '900', color: '#065f46', fontSize: '14px' }}>
+                            ₹{netBalance.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* FOOTER SIGNATURES & FESTIVE GREETING */}
+              <div style={{
+                marginTop: '0.4rem',
+                borderTop: '1.5px solid #000000',
+                paddingTop: '0.65rem',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                alignItems: 'end',
+                fontSize: '11px'
+              }}>
+                <div>
+                  <div style={{ height: '36px' }}></div>
+                  <div style={{ borderTop: '1px dashed #64748b', display: 'inline-block', paddingTop: '2px', fontWeight: 'bold' }}>
+                    Customer / Receiver's Signature
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 'bold', color: '#881337' }}>
+                    For {shop.name || 'SHRI GUGAN CRACKERS'}
+                  </div>
+                  <div style={{ height: '36px' }}></div>
+                  <div style={{ borderTop: '1px dashed #64748b', display: 'inline-block', paddingTop: '2px', fontWeight: 'bold' }}>
+                    Authorized Signatory &amp; Stamp
+                  </div>
+                </div>
+              </div>
+
+              {/* BILINGUAL GREETING */}
+              <div style={{
+                textAlign: 'center',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: '#881337',
+                borderTop: '1px solid #f1f5f9',
+                paddingTop: '4px'
+              }}>
+                🎉 {shop.footerMessage || 'Thank you for choosing Shri Gugan Crackers! Visit Again. / நன்றி! மீண்டும் வருக!'} 🎉
+              </div>
+            </div>
+          ) : printFormat === 'performa' ? (
+            /* ==========================================================
+               2. PERFORMA / WHOLESALE BILL (WITH COMPLETE SHOP ADDRESS & LOGO)
                ========================================================== */
             <div
               id="printable-invoice"
@@ -168,12 +710,13 @@ export const InvoicePrintModal = () => {
               {/* Document Header Title */}
               <div style={{
                 position: 'relative',
-                padding: '8px 16px 6px',
+                padding: '6px 16px 4px',
                 textAlign: 'center',
-                borderBottom: '1.5px solid #000000'
+                borderBottom: '1.5px solid #000000',
+                background: '#f8fafc'
               }}>
                 <div style={{
-                  fontSize: '18px',
+                  fontSize: '17px',
                   fontWeight: 'bold',
                   letterSpacing: '2px',
                   color: '#000000',
@@ -184,11 +727,37 @@ export const InvoicePrintModal = () => {
                 <div style={{
                   position: 'absolute',
                   right: '16px',
-                  top: '10px',
+                  top: '8px',
                   fontSize: '11px',
                   color: '#1e293b'
                 }}>
                   {inv.copyType || '(EXTRA COPY)'}
+                </div>
+              </div>
+
+              {/* Shop Full Details Banner in Wholesale Performa */}
+              <div style={{
+                padding: '6px 14px',
+                borderBottom: '1.5px solid #000000',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: '#ffffff'
+              }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {shop.name || 'SHRI GUGAN CRACKERS'} • {shop.tamilName || 'ஸ்ரீ குகன் கிராக்கர்ஸ்'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#000000', marginTop: '1px' }}>
+                    {shopAddress}, {shopCity} - {shopPincode}, {shopDistrict} Dist, {shopState}
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#000000' }}>
+                    <strong>Ph:</strong> +91 {shopPhone} {shopAltPhone ? ` / ${shopAltPhone}` : ''} | <strong>Email:</strong> {shopEmail}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '11px', fontWeight: 'bold' }}>
+                  <div>GSTIN: <span style={{ fontFamily: 'monospace' }}>{shopGstin}</span></div>
+                  <div>State Code: 33 (TN)</div>
                 </div>
               </div>
 
@@ -222,9 +791,16 @@ export const InvoicePrintModal = () => {
                     marginTop: '8px',
                     paddingTop: '4px',
                     fontSize: '12px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    justifyContent: 'space-between'
                   }}>
-                    GSTIN / PAN : <span style={{ fontFamily: 'monospace', fontSize: '13px', letterSpacing: '0.04em' }}>{inv.customerGstin || '29ATGPM1120L2ZN'}</span>
+                    <span>
+                      GSTIN / PAN : <span style={{ fontFamily: 'monospace', fontSize: '13px', letterSpacing: '0.04em' }}>{inv.customerGstin || '29ATGPM1120L2ZN'}</span>
+                    </span>
+                    {inv.customerMobile && (
+                      <span>Ph: +91 {inv.customerMobile}</span>
+                    )}
                   </div>
                 </div>
 
@@ -244,7 +820,7 @@ export const InvoicePrintModal = () => {
                     src={shop.logo || '/logo.png'}
                     alt="Logo"
                     style={{
-                      maxHeight: '76px',
+                      maxHeight: '74px',
                       maxWidth: '125px',
                       objectFit: 'contain',
                       display: 'block'
@@ -325,8 +901,8 @@ export const InvoicePrintModal = () => {
                     ))}
 
                     {/* Extended Empty Rows to Maintain Vertical Gridlines down the Page */}
-                    {emptyRows.map((_, i) => (
-                      <tr key={`empty-${i}`} style={{ height: '30px' }}>
+                    {emptyRowsPerforma.map((_, i) => (
+                      <tr key={`empty-perf-${i}`} style={{ height: '28px' }}>
                         <td style={{ borderRight: '1px solid #000000' }}>&nbsp;</td>
                         <td style={{ borderRight: '1px solid #000000' }}>&nbsp;</td>
                         <td style={{ borderRight: '1px solid #000000' }}>&nbsp;</td>
@@ -372,15 +948,15 @@ export const InvoicePrintModal = () => {
                 gridTemplateColumns: '1fr 280px',
                 minHeight: '175px'
               }}>
-                {/* Left Box: Order No, Despatch date, Transport, Agent, Page 1 */}
+                {/* Left Box: Order No, Despatch date, Transport, Agent, Amount in Words */}
                 <div style={{
-                  padding: '10px 14px',
+                  padding: '8px 14px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   fontSize: '12px'
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div>
                       <strong>Order No &nbsp; &nbsp; &nbsp; &nbsp;:</strong> {inv.orderNo ? `${inv.orderNo},` : ' ,'}
                     </div>
@@ -393,10 +969,16 @@ export const InvoicePrintModal = () => {
                     <div>
                       <strong>Agent &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :</strong> {inv.agent || 'ARUN'}
                     </div>
+                    <div style={{ marginTop: '4px', fontSize: '11px', color: '#1e293b' }}>
+                      <strong>Words:</strong> {numberToWordsIndian(netAmount)}
+                    </div>
                   </div>
 
-                  <div style={{ textAlign: 'center', fontSize: '11px', paddingBottom: '2px', color: '#1e293b' }}>
-                    Page 1
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', paddingTop: '6px' }}>
+                    <div style={{ fontSize: '11px', color: '#1e293b' }}>Page 1</div>
+                    <div style={{ fontSize: '10px', borderTop: '1px dashed #000000', paddingTop: '2px', fontWeight: 'bold' }}>
+                      Authorized Signatory
+                    </div>
                   </div>
                 </div>
 
@@ -416,13 +998,13 @@ export const InvoicePrintModal = () => {
                         <td style={{ textAlign: 'right', padding: '2px 0' }}>{pfAmount.toFixed(2)}</td>
                       </tr>
                       <tr>
-                        <td style={{ padding: '2px 0' }}>TAX</td>
+                        <td style={{ padding: '2px 0' }}>TAX ({taxPercent}%)</td>
                         <td style={{ textAlign: 'right', padding: '2px 0' }}>{taxAmount.toFixed(2)}</td>
                       </tr>
                       <tr>
                         <td style={{ padding: '2px 0' }}>Round off</td>
                         <td style={{ textAlign: 'right', padding: '2px 0' }}>
-                          {roundOff > 0 ? `${roundOff.toFixed(2)}` : `${roundOff.toFixed(2)}`}
+                          {roundOff > 0 ? `+${roundOff.toFixed(2)}` : `${roundOff.toFixed(2)}`}
                         </td>
                       </tr>
 
@@ -452,9 +1034,9 @@ export const InvoicePrintModal = () => {
                 </div>
               </div>
             </div>
-          ) : printFormat === 'thermal' ? (
+          ) : (
             /* ==========================================================
-               THERMAL RECEIPT (3-INCH / 80MM)
+               3. THERMAL RECEIPT (3-INCH / 80MM COUNTER SLIP)
                ========================================================== */
             <div
               id="printable-invoice"
@@ -477,19 +1059,22 @@ export const InvoicePrintModal = () => {
                 <img
                   src={shop.logo || '/logo.png'}
                   alt="Logo"
-                  style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', margin: '0 auto 6px', display: 'block' }}
+                  style={{ maxHeight: '54px', maxWidth: '120px', objectFit: 'contain', margin: '0 auto 6px', display: 'block' }}
                 />
-                <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#000000' }}>
+                <div style={{ fontSize: '17px', fontWeight: 800, letterSpacing: '-0.02em', color: '#000000' }}>
                   {shop.name || 'SHRI GUGAN CRACKERS'}
                 </div>
-                <div style={{ fontSize: '11px', fontWeight: 600, marginTop: '2px', color: '#374151' }}>
-                  {shop.tamilName}
+                <div style={{ fontSize: '12px', fontWeight: 700, marginTop: '1px', color: '#374151' }}>
+                  {shop.tamilName || 'ஸ்ரீ குகன் கிராக்கர்ஸ்'}
                 </div>
-                <div style={{ fontSize: '10px', color: '#4b5563', marginTop: '3px' }}>
-                  {shop.address}, {shop.city}
+                <div style={{ fontSize: '10px', color: '#4b5563', marginTop: '2px' }}>
+                  {shopAddress}, {shopCity} - {shopPincode}
                 </div>
                 <div style={{ fontSize: '11px', fontWeight: 700, marginTop: '2px' }}>
-                  Ph: {shop.mobile}
+                  Ph: {shopPhone}
+                </div>
+                <div style={{ fontSize: '10px', color: '#4b5563' }}>
+                  GSTIN: {shopGstin}
                 </div>
               </div>
 
@@ -497,12 +1082,13 @@ export const InvoicePrintModal = () => {
 
               {/* Invoice Meta */}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700 }}>
-                <span>Bill: {inv.invoiceNo}</span>
+                <span>Bill: #{inv.invoiceNo}</span>
                 <span>Date: {inv.despatchDate || formatDateTime(inv.date)}</span>
               </div>
               <div style={{ fontSize: '11px', marginTop: '3px' }}>
                 <div><strong>M/s:</strong> {inv.customerName || 'Cash Customer'}</div>
                 {inv.customerAddress && <div><strong>City:</strong> {inv.customerAddress}</div>}
+                {inv.customerMobile && <div><strong>Phone:</strong> +91 {inv.customerMobile}</div>}
                 {inv.customerGstin && <div><strong>GSTIN:</strong> {inv.customerGstin}</div>}
                 {inv.transport && <div><strong>Transport:</strong> {inv.transport}</div>}
               </div>
@@ -524,7 +1110,7 @@ export const InvoicePrintModal = () => {
                   {inv.items && inv.items.map((item, idx) => (
                     <tr key={idx} style={{ verticalAlign: 'top' }}>
                       <td style={{ paddingTop: '4px', paddingBottom: '2px' }}>
-                        <div>{item.name}</div>
+                        <div style={{ fontWeight: 'bold' }}>{item.name}</div>
                         <div style={{ fontSize: '9px', color: '#64748b' }}>{item.packContent}</div>
                       </td>
                       <td style={{ paddingTop: '4px', textAlign: 'center' }}>{item.cases || 1}</td>
@@ -589,250 +1175,39 @@ export const InvoicePrintModal = () => {
                 </div>
               )}
 
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '14px',
-                fontWeight: 800,
-                padding: '4px 0',
-                color: '#16a34a'
-              }}>
-                <span>NET BALANCE:</span>
-                <span>₹{netBalance.toFixed(2)}</span>
-              </div>
+              {commissionAmount > 0 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  padding: '4px 0',
+                  color: '#16a34a'
+                }}>
+                  <span>NET BALANCE:</span>
+                  <span>₹{netBalance.toFixed(2)}</span>
+                </div>
+              )}
 
               <div style={{ borderBottom: '1px double #000000', margin: '6px 0' }}></div>
 
+              {/* QR Code in Thermal */}
+              <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                <img
+                  src={qrCodeUrl}
+                  alt="UPI QR"
+                  style={{ width: '64px', height: '64px', margin: '0 auto', display: 'block' }}
+                />
+                <div style={{ fontSize: '9px', fontWeight: 'bold', marginTop: '2px' }}>
+                  Scan to Pay: {upiId}
+                </div>
+              </div>
+
               {/* Footer Note */}
-              <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '10px' }}>
+              <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '10px' }}>
                 <div style={{ fontWeight: 700 }}>{shop.footerMessage}</div>
-                <div style={{ marginTop: '6px', fontSize: '9px', color: '#6b7280' }}>
-                  Software by Gugan POS • www.guganpos.com
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* ==========================================================
-               A4 STANDARD SHEET / RETAIL INVOICE
-               ========================================================== */
-            <div
-              id="printable-invoice"
-              style={{
-                width: '100%',
-                maxWidth: '750px',
-                margin: '0 auto',
-                background: '#ffffff',
-                padding: '2rem',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                fontFamily: 'var(--font-sans)',
-                fontSize: '13px',
-                color: 'var(--text-main)',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-            >
-              {/* Header Box */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                borderBottom: '2px solid var(--primary)',
-                paddingBottom: '1.25rem',
-                marginBottom: '1.25rem'
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img
-                      src={shop.logo || '/logo.png'}
-                      alt="Logo"
-                      style={{
-                        width: '56px',
-                        height: '56px',
-                        objectFit: 'contain',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)',
-                        background: '#ffffff'
-                      }}
-                    />
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                      {shop.name}
-                    </h2>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginTop: '2px' }}>
-                    {shop.tamilName} • {shop.tagline}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px' }}>
-                    {shop.address}, {shop.city} - {shop.pincode}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    <strong>Phone:</strong> {shop.mobile} • <strong>Email:</strong> {shop.email}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <span className="badge badge-primary" style={{ fontSize: '0.85rem', padding: '0.35rem 0.85rem', fontWeight: 800 }}>
-                    TAX INVOICE
-                  </span>
-                  <table style={{ marginTop: '0.75rem', fontSize: '0.82rem', textAlign: 'right', marginLeft: 'auto' }}>
-                    <tbody>
-                      <tr>
-                        <td style={{ padding: '2px 8px', color: 'var(--text-muted)' }}>Invoice No:</td>
-                        <td style={{ padding: '2px 0', fontWeight: 700 }}>{inv.invoiceNo}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '2px 8px', color: 'var(--text-muted)' }}>Date:</td>
-                        <td style={{ padding: '2px 0', fontWeight: 600 }}>{inv.despatchDate || formatDateTime(inv.date)}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '2px 8px', color: 'var(--text-muted)' }}>Transport:</td>
-                        <td style={{ padding: '2px 0', fontWeight: 700 }}>{inv.transport || 'Direct'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Customer Box */}
-              <div style={{
-                background: '#f8fafc',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.75rem 1rem',
-                marginBottom: '1.25rem',
-                display: 'flex',
-                justifyContent: 'space-between'
-              }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
-                    M/s Customer Details:
-                  </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-                    {inv.customerName || 'Cash / Walk-in Customer'}
-                  </div>
-                  {inv.customerAddress && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{inv.customerAddress}</div>
-                  )}
-                  {inv.customerGstin && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      GSTIN/PAN: {inv.customerGstin}
-                    </div>
-                  )}
-                </div>
-                {inv.customerMobile && (
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
-                      Mobile:
-                    </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)' }}>
-                      +91 {inv.customerMobile}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Item Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.25rem' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid var(--border-color)', fontSize: '0.8rem', textAlign: 'left' }}>
-                    <th style={{ padding: '8px 10px', width: '5%' }}>#</th>
-                    <th style={{ padding: '8px 10px' }}>Item Description</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '10%' }}>Cases</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '10%' }}>Qty</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', width: '15%' }}>Rate (₹)</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '10%' }}>Disc</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', width: '18%' }}>Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {inv.items && inv.items.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)', fontSize: '0.85rem' }}>
-                      <td style={{ padding: '8px 10px', color: 'var(--text-muted)' }}>{idx + 1}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: 600 }}>
-                        {item.name}
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.packContent}</div>
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{item.cases || 1}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>{item.qty}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>{Number(item.rate).toFixed(2)}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--success)' }}>
-                        {item.discount > 0 ? `${item.discount}%` : '-'}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
-                        {Number(item.total).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Summary and Calculations */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '2rem' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Transport &amp; Despatch Notes:
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    <div>Transport: <strong>{inv.transport || 'N/A'}</strong></div>
-                    <div>Agent: <strong>{inv.agent || 'N/A'}</strong></div>
-                    <div>Order No: <strong>{inv.orderNo || 'N/A'}</strong></div>
-                  </div>
-                </div>
-
-                <div style={{ width: '280px' }}>
-                  <table style={{ width: '100%', fontSize: '0.85rem' }}>
-                    <tbody>
-                      <tr>
-                        <td style={{ padding: '4px 0', color: 'var(--text-muted)' }}>Total Cases / Items:</td>
-                        <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: 600 }}>
-                          {totalCases} cases / {inv.items ? inv.items.length : 0} items
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '4px 0', color: 'var(--text-muted)' }}>SubTotal:</td>
-                        <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: 600 }}>{subtotal.toFixed(2)}</td>
-                      </tr>
-                      {pfAmount > 0 && (
-                        <tr>
-                          <td style={{ padding: '4px 0', color: 'var(--text-muted)' }}>P &amp; F ({pfPercent}%):</td>
-                          <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: 600 }}>{pfAmount.toFixed(2)}</td>
-                        </tr>
-                      )}
-                      <tr>
-                        <td style={{ padding: '4px 0', color: 'var(--text-muted)' }}>TAX ({taxPercent}%):</td>
-                        <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: 600 }}>{taxAmount.toFixed(2)}</td>
-                      </tr>
-                      {roundOff !== 0 && (
-                        <tr>
-                          <td style={{ padding: '4px 0', color: 'var(--text-muted)' }}>Round off:</td>
-                          <td style={{ padding: '4px 0', textAlign: 'right', color: 'var(--text-muted)' }}>
-                            {roundOff > 0 ? `+${roundOff.toFixed(2)}` : roundOff.toFixed(2)}
-                          </td>
-                        </tr>
-                      )}
-                      <tr style={{ borderTop: '2px solid var(--border-color)' }}>
-                        <td style={{ padding: '8px 0', fontSize: '1rem', fontWeight: 800 }}>Net amount:</td>
-                        <td style={{ padding: '8px 0', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800 }}>
-                          {netAmount.toFixed(2)}
-                        </td>
-                      </tr>
-                      {commissionAmount > 0 && (
-                        <tr>
-                          <td style={{ padding: '4px 0', color: '#dc2626' }}>Comission @ {commissionPercent}%:</td>
-                          <td style={{ padding: '4px 0', textAlign: 'right', color: '#dc2626', fontWeight: 600 }}>
-                            -{commissionAmount.toFixed(2)}
-                          </td>
-                        </tr>
-                      )}
-                      <tr style={{ borderTop: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '6px 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>
-                          Net Balance:
-                        </td>
-                        <td style={{ padding: '6px 0', textAlign: 'right', fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)' }}>
-                          {netBalance.toFixed(2)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div style={{ marginTop: '4px', fontSize: '9px', color: '#6b7280' }}>
+                  Software by Shri Gugan Billing
                 </div>
               </div>
             </div>
